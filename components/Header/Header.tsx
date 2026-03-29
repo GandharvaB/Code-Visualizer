@@ -3,6 +3,7 @@ import { sampleCodes } from '@/lib/samples';
 import { useVisualizerStore } from '@/store/visualizer';
 import { Code2, Settings, Download, Upload, Link as LinkIcon } from 'lucide-react';
 import { useState } from 'react';
+import JSZip from 'jszip';
 import SettingsModal from './SettingsModal';
 import UrlImportModal from './UrlImportModal';
 
@@ -30,9 +31,41 @@ export default function Header() {
     if (!file) return;
 
     if (file.name.endsWith('.zip')) {
-        // Here we'd typically use JSZip to read the zip.
-        // For now, we mock it or show alert since JSZip isn't in scope.
-        alert('Zip upload currently unsupported in this demo without jszip!');
+        setIsProcessing(true);
+        JSZip.loadAsync(file).then(async (zip) => {
+           const extracted: { name: string; content: string }[] = [];
+           const validExts = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'rs', 'go'];
+           
+           for (const [relativePath, zipEntry] of Object.entries(zip.files)) {
+               if (zipEntry.dir) continue;
+               
+               const ext = relativePath.split('.').pop()?.toLowerCase() || '';
+               if (validExts.includes(ext)) {
+                   const content = await zipEntry.async('string');
+                   extracted.push({ name: relativePath, content });
+               }
+           }
+           
+           if (extracted.length > 0) {
+               setFiles(extracted);
+               setCode(extracted[0].content);
+               setActiveMode('deps');
+               
+               // Guess primary language from first valid file
+               const ext = extracted[0].name.split('.').pop()?.toLowerCase() || '';
+               const extMap: Record<string, string> = {
+                 'js': 'javascript', 'ts': 'typescript', 'tsx': 'typescript',
+                 'py': 'python', 'java': 'java', 'cpp': 'cpp', 'c': 'cpp', 'rs': 'rust', 'go': 'go'
+               };
+               if (extMap[ext]) setLanguage(extMap[ext]);
+           } else {
+               alert('No supported files found inside the zip.');
+           }
+           setIsProcessing(false);
+        }).catch(err => {
+           console.error('Error unzipping:', err);
+           setIsProcessing(false);
+        });
         return;
     }
 
