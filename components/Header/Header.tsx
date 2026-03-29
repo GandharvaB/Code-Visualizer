@@ -1,9 +1,10 @@
 "use client"
 import { sampleCodes } from '@/lib/samples';
 import { useVisualizerStore } from '@/store/visualizer';
-import { Code2, Settings, Download, Upload } from 'lucide-react';
+import { Code2, Settings, Download, Upload, Link as LinkIcon } from 'lucide-react';
 import { useState } from 'react';
 import SettingsModal from './SettingsModal';
+import UrlImportModal from './UrlImportModal';
 
 const languages = [
   'javascript', 'typescript', 'python', 'java', 'cpp', 'rust', 'go'
@@ -12,6 +13,7 @@ const languages = [
 export default function Header() {
   const { setCode, language, setLanguage, setIsProcessing, setOutputs, setFiles, activeMode, setActiveMode } = useVisualizerStore();
   const [showSettings, setShowSettings] = useState(false);
+  const [showUrlImport, setShowUrlImport] = useState(false);
 
   const loadSample = (key: string) => {
     const code = sampleCodes[key];
@@ -85,6 +87,14 @@ export default function Header() {
           </label>
 
           <button 
+             onClick={() => setShowUrlImport(true)}
+             className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-2"
+             title="Import GitHub Link"
+          >
+             <LinkIcon size={18} />
+          </button>
+
+          <button 
              onClick={() => setShowSettings(true)}
              className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors ml-2"
           >
@@ -94,6 +104,7 @@ export default function Header() {
       </header>
       
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showUrlImport && <UrlImportModal onClose={() => setShowUrlImport(false)} />}
     </>
   );
 }
